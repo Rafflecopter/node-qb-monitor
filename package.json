@@ -1,0 +1,31 @@
+{
+  "name": "qb-monitor",
+  "version": "0.0.1",
+  "description": "Monitoring utilities for the QB framework",
+  "main": "index.js",
+  "scripts": {
+    "test": "nodeunit tests"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com/Rafflecopter/node-qb-monitor"
+  },
+  "keywords": [
+    "qb"
+  ],
+  "author": "Jon Eisen <jon@metricfeat.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Rafflecopter/node-qb-monitor/issues"
+  },
+  "homepage": "https://github.com/Rafflecopter/node-qb-monitor",
+  "dependencies": {
+    "async": "~0.4.0"
+  },
+  "devDependencies": {
+    "qb": "~0.6.3",
+    "moniker": "~0.1.2",
+    "redis": "~0.10.1",
+    "hiredis": "~0.1.16"
+  }
+}
