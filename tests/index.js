@@ -1,5 +1,5 @@
 
-var QB = require('qb').QB
+var QB = require('qb').backend(require('qb-relyq'))
   , Moniker = require('moniker')
   , redis = require('redis')
   , qstats = require('../lib/queue_stats')
@@ -15,17 +15,14 @@ process.setMaxListeners(100);
 var tests = exports.tests = {};
 
 tests.setUp = function (cb) {
-  var cli = redis.createClient(6379, 'localhost', { enable_offline_queue: false })
-    .on('ready', function () {
-      qb = new QB({
-        prefix: 'qb:'+Moniker.choose(),
-        max_concurrent_callbacks: 1,
-        allow_defer: false,
-        allow_recur: false,
-        redis: cli
-      });
-      cb();
+    qb = new QB({
+      prefix: 'qb:'+Moniker.choose(),
+      max_out: 1,
+      allow_defer: false,
+      allow_recur: false,
+      createRedis: function () {return redis.createClient(6379, 'localhost', { enable_offline_queue: false })}
     });
+    cb();
 }
 
 tests.tearDown = function (cb) {
@@ -36,19 +33,16 @@ tests.tearDown = function (cb) {
 tests.qstats = function (test) {
   var cnts = {todo:0,doing:0,failed:0}
   test.expect(12)
-  qb.on('error', test.done)
+  qb.on('error', function (err) { console.log('ERROR:', err); test.ifError(err); test.done(err); })
     .can('work', function (task, done) {
       if (task.n==1) qb.push('work', {n:2})
       done(task.n === 2 ? new Error('yoyoes') : null)
     })
     .pre('push', function (type, task) {
-      if (task.n==1) cnts.todo++
-      else cnts.doing ++; // todo is skipped so fast
+      task.n > 1 ? cnts.todo++ : cnts.doing++
     })
     .pre('process', function (type, task) {
-      if (task.n==1) {
-        cnts.todo--; cnts.doing++;
-      }
+      if(task.n > 1) cnts.todo--, cnts.doing++
     })
     .pre('finish', function () {
       cnts.doing --;
@@ -56,7 +50,7 @@ tests.qstats = function (test) {
     .pre('fail', function () {
       cnts.doing --; cnts.failed ++;
     })
-    .post('push', test_state.bind(null, 'push'))
+    .on('push', test_state.bind(null, 'push'))
     .pre('process', test_state.bind(null, 'process'))
     .post('finish', test_state.bind(null, 'finish'))
     .post('fail', function (type, task, cb) {
@@ -66,7 +60,9 @@ tests.qstats = function (test) {
     })
     .start()
 
-    .push('work', {n: 1})
+    .on('ready', function () {
+      qb.push('work', {n: 1})
+    })
 
 
   function test_state(state, type, task, cb) {
