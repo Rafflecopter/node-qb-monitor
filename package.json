@@ -1,6 +1,6 @@
 {
   "name": "qb-monitor",
-  "version": "0.1.3",
+  "version": "2.0.0",
   "description": "Monitoring utilities for the QB framework",
   "main": "index.js",
   "scripts": {
